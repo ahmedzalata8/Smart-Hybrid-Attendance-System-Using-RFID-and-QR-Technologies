@@ -1,0 +1,940 @@
+/* ================================================================
+   Design System — Attendance Dashboard
+   ☐ Neobrutalism Theme
+   Inspired by https://www.neobrutalism.dev/
+   ================================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ── Neobrutalism Core Palette ── */
+  --color-bg: #e0ddcf;              /* warm beige background */
+  --color-surface: #ffffff;          /* white surface */
+  --color-surface-alt: #f5f3eb;     /* slightly off-white */
+  --color-border: #000000;           /* hard black border */
+  --color-border-light: #000000;
+
+  --color-text: #000000;
+  --color-text-secondary: #333333;
+  --color-text-muted: #666666;
+
+  /* Primary accent — neobrutalism blue */
+  --color-accent: #88aaee;
+  --color-accent-hover: #6b93e0;
+  --color-accent-subtle: #dbe8ff;
+
+  /* Semantic colors — bold & saturated */
+  --color-success: #7bc67e;
+  --color-success-subtle: #d0f0d2;
+  --color-danger: #ff6b6b;
+  --color-danger-subtle: #ffd4d4;
+  --color-warning: #ffcc4d;
+  --color-warning-subtle: #fff0c2;
+
+  /* Seat map */
+  --seat-empty: #e8e5d8;
+  --seat-occupied: #88aaee;
+  --seat-present: #7bc67e;
+  --seat-rejected: #ff6b6b;
+  --seat-revoked: #ffcc4d;
+
+  /* Typography */
+  --font-family: 'DM Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-size-xs: 0.75rem;
+  --font-size-sm: 0.8125rem;
+  --font-size-base: 0.875rem;
+  --font-size-md: 1rem;
+  --font-size-lg: 1.25rem;
+  --font-size-xl: 1.5rem;
+  --font-size-2xl: 2rem;
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+
+  /* Neobrutalism — hard border radius */
+  --radius-sm: 5px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Neobrutalism — hard offset shadows (NO blur) */
+  --shadow-sm: 2px 2px 0 #000;
+  --shadow-md: 4px 4px 0 #000;
+  --shadow-lg: 6px 6px 0 #000;
+  --shadow-neo: 4px 4px 0 #000;
+
+  /* Border shorthand */
+  --border: 2px solid #000;
+
+  /* Sidebar */
+  --sidebar-width: 250px;
+}
+
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  color: var(--color-text);
+  background: var(--color-bg);
+  line-height: 1.6;
+  font-weight: 500;
+}
+
+a { color: inherit; text-decoration: none; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* ── Custom Scrollbar ── */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-bg);
+  border-left: var(--border);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-accent);
+  border: 2px solid #000;
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-accent-hover);
+}
+
+/* ================================================================
+   LAYOUT
+   ================================================================ */
+.app-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  width: var(--sidebar-width);
+  background: var(--color-surface);
+  border-right: 3px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 10;
+}
+
+.sidebar-header {
+  padding: var(--space-6);
+  border-bottom: 3px solid var(--color-border);
+  background: var(--color-accent);
+}
+
+.sidebar-brand {
+  font-size: var(--font-size-md);
+  font-weight: 900;
+  color: #000;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.sidebar-brand span {
+  color: #000;
+}
+
+.sidebar-role {
+  font-size: var(--font-size-xs);
+  color: #000;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+
+.sidebar-nav {
+  flex: 1;
+  padding: var(--space-4) 0;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  transition: all 0.15s ease;
+  border-left: 4px solid transparent;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sidebar-link:hover {
+  color: #000;
+  background: var(--color-accent-subtle);
+}
+
+.sidebar-link.active {
+  color: #000;
+  background: var(--color-accent);
+  border-left-color: #000;
+  font-weight: 900;
+}
+
+.sidebar-link svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  stroke-width: 2.5;
+}
+
+.sidebar-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 3px solid var(--color-border);
+}
+
+/* ── Main Content ── */
+.main-content {
+  margin-left: var(--sidebar-width);
+  flex: 1;
+  min-height: 100vh;
+}
+
+.page {
+  padding: var(--space-8) var(--space-10);
+  max-width: 1200px;
+}
+
+.page-header {
+  margin-bottom: var(--space-8);
+}
+
+.page-title {
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  color: #000;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+}
+
+.page-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-top: var(--space-1);
+  font-weight: 500;
+}
+
+/* ================================================================
+   CARDS — Neobrutalism style
+   white bg, 2px black border, hard shadow
+   ================================================================ */
+.card {
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Remove the old gradient line */
+.card::before {
+  display: none;
+}
+
+.card-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 2px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-surface-alt);
+}
+
+.card-title {
+  font-size: var(--font-size-md);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+
+.card-body {
+  padding: var(--space-6);
+}
+
+/* ================================================================
+   STAT CARDS
+   ================================================================ */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+  margin-bottom: var(--space-8);
+}
+
+.stat-card {
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius-lg);
+  padding: var(--space-5) var(--space-6);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-card:hover {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+/* Top accent bar */
+.stat-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 4px;
+  background: var(--color-accent);
+}
+
+.stat-card:nth-child(2)::before { background: var(--color-success); }
+.stat-card:nth-child(3)::before { background: var(--color-danger); }
+.stat-card:nth-child(4)::before { background: var(--color-warning); }
+.stat-card:nth-child(5)::before { background: #c4a1ff; }
+
+.stat-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-weight: 800;
+}
+
+.stat-value {
+  font-size: var(--font-size-2xl);
+  font-weight: 900;
+  margin-top: var(--space-1);
+  letter-spacing: -0.02em;
+  color: #000;
+}
+
+.stat-value.success { color: #2d8a3e; }
+.stat-value.danger { color: #cc3333; }
+.stat-value.warning { color: #b38600; }
+
+/* ================================================================
+   BUTTONS — Neobrutalism style
+   2px black border, hard shadow, translate on hover
+   ================================================================ */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  padding: var(--space-2) var(--space-5);
+  border-radius: var(--radius-md);
+  border: var(--border);
+  transition: all 0.15s ease;
+  height: 40px;
+  white-space: nowrap;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+}
+
+.btn:hover {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn:active {
+  transform: translate(2px, 2px);
+  box-shadow: none;
+}
+
+.btn-primary {
+  background: var(--color-accent);
+  color: #000;
+}
+
+.btn-secondary {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.btn-danger {
+  background: var(--color-danger);
+  color: #000;
+}
+.btn-danger:hover {
+  background: #ff5252;
+}
+
+.btn-sm {
+  height: 32px;
+  font-size: var(--font-size-xs);
+  padding: var(--space-1) var(--space-3);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.btn-lg {
+  height: 44px;
+  font-size: var(--font-size-base);
+  padding: var(--space-3) var(--space-8);
+  box-shadow: var(--shadow-md);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+/* ================================================================
+   FORMS — Neobrutalism style
+   2px border, white bg, ring on focus
+   ================================================================ */
+.form-group {
+  margin-bottom: var(--space-5);
+}
+
+.form-label {
+  display: block;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.form-input {
+  width: 100%;
+  height: 40px;
+  padding: 0 var(--space-3);
+  font-size: var(--font-size-base);
+  background: var(--color-surface);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  transition: all 0.15s ease;
+  font-weight: 500;
+}
+
+.form-input:focus {
+  outline: none;
+  ring: 2px solid #000;
+  box-shadow: 0 0 0 2px #000;
+}
+
+.form-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.form-error {
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  margin-top: var(--space-1);
+  font-weight: 700;
+}
+
+/* ================================================================
+   TABLE — Neobrutalism data table style
+   2px border, bold header bg, clean rows
+   ================================================================ */
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+  border: 2px solid var(--color-border);
+}
+
+thead th {
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-weight: 800;
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #000;
+  border-bottom: 2px solid var(--color-border);
+  background: var(--color-accent);
+  white-space: nowrap;
+}
+
+tbody td {
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 500;
+  background: var(--color-surface);
+}
+
+tbody tr:hover td {
+  background: var(--color-accent-subtle);
+}
+
+tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* ================================================================
+   STATUS BADGES — Neobrutalism style
+   2px border, solid pastel bg, no glow
+   ================================================================ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 800;
+  padding: 3px 10px;
+  border-radius: var(--radius-sm);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  border: 2px solid #000;
+}
+
+.badge-active {
+  background: var(--color-accent);
+  color: #000;
+}
+.badge-closed {
+  background: #e0ddd0;
+  color: #333;
+}
+.badge-present {
+  background: var(--color-success);
+  color: #000;
+}
+.badge-rejected {
+  background: var(--color-danger);
+  color: #000;
+}
+.badge-revoked {
+  background: var(--color-warning);
+  color: #000;
+}
+
+/* ================================================================
+   SEAT GRID (Digital Twin) — Neobrutalism style
+   ================================================================ */
+.seat-grid {
+  display: inline-grid;
+  gap: 6px;
+  padding: var(--space-6);
+  background: var(--color-surface-alt);
+  border-radius: var(--radius-lg);
+  border: var(--border);
+  box-shadow: var(--shadow-md);
+}
+
+.seat-cell {
+  width: 60px;
+  height: 60px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: default;
+  transition: all 0.15s ease;
+  border: 2px solid #000;
+}
+
+.seat-cell:hover {
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.seat-empty {
+  background: var(--seat-empty);
+  color: var(--color-text-muted);
+  box-shadow: 2px 2px 0 #000;
+}
+
+.seat-occupied {
+  background: var(--seat-occupied);
+  color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.seat-present {
+  background: var(--seat-present);
+  color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.seat-rejected {
+  background: var(--seat-rejected);
+  color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.seat-revoked {
+  background: var(--seat-revoked);
+  color: #000;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.seat-cell .seat-label {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.seat-cell .seat-status {
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  margin-top: 2px;
+}
+
+.seat-legend {
+  display: flex;
+  gap: var(--space-5);
+  margin-top: var(--space-4);
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  font-weight: 700;
+}
+
+.seat-legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.seat-legend-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 3px;
+  border: 2px solid #000;
+}
+
+
+
+/* ================================================================
+   QR CODE DISPLAY
+   ================================================================ */
+.qr-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-8);
+  background: #ffffff;
+  border-radius: var(--radius-lg);
+  border: var(--border);
+  box-shadow: var(--shadow-lg);
+}
+
+.qr-container canvas {
+  border-radius: var(--radius-sm);
+}
+
+.qr-info {
+  margin-top: var(--space-6);
+  text-align: center;
+  font-size: var(--font-size-sm);
+  color: #000;
+  font-weight: 700;
+}
+
+/* ================================================================
+   LOGIN PAGE — Neobrutalism card style
+   ================================================================ */
+.login-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--color-bg);
+  /* Neobrutalism — playful diagonal stripes bg */
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 20px,
+    rgba(0,0,0,0.03) 20px,
+    rgba(0,0,0,0.03) 40px
+  );
+}
+
+.login-card {
+  width: 100%;
+  max-width: 420px;
+  padding: var(--space-10);
+  background: var(--color-surface);
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 8px 8px 0 #000;
+  position: relative;
+}
+
+/* Remove old gradient aftereffect */
+.login-card::after {
+  display: none;
+}
+
+.login-title {
+  font-size: var(--font-size-xl);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-1);
+  color: #000;
+  text-transform: uppercase;
+}
+
+.login-subtitle {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-8);
+  font-weight: 600;
+}
+
+.login-btn {
+  width: 100%;
+  height: 48px;
+  font-size: var(--font-size-md);
+  margin-top: var(--space-4);
+  letter-spacing: 0.05em;
+  box-shadow: var(--shadow-md);
+  font-weight: 800;
+}
+
+/* ================================================================
+   ALERT / ERROR BOX — Neobrutalism style
+   ================================================================ */
+/* Used inline in Login.tsx and CreateSession.tsx via <div> with inline styles,
+   so we also add a reusable class */
+.alert {
+  padding: var(--space-3) var(--space-4);
+  border: var(--border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: var(--space-5);
+}
+
+.alert-danger {
+  background: var(--color-danger);
+  color: #000;
+}
+
+.alert-success {
+  background: var(--color-success);
+  color: #000;
+}
+
+.alert-warning {
+  background: var(--color-warning);
+  color: #000;
+}
+
+.alert-info {
+  background: var(--color-accent);
+  color: #000;
+}
+
+/* ================================================================
+   EMPTY STATE
+   ================================================================ */
+.empty-state {
+  text-align: center;
+  padding: var(--space-12) var(--space-8);
+  color: var(--color-text-muted);
+}
+
+.empty-state p {
+  font-size: var(--font-size-sm);
+  margin-top: var(--space-2);
+  font-weight: 600;
+}
+
+/* ================================================================
+   MODAL / DIALOG — Neobrutalism style
+   Hard shadow, thick border, white bg
+   ================================================================ */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: var(--color-surface);
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 8px 8px 0 #000;
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal-header {
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 3px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--color-accent);
+}
+
+.modal-title {
+  font-size: var(--font-size-md);
+  font-weight: 900;
+  text-transform: uppercase;
+  color: #000;
+}
+
+.modal-close {
+  background: var(--color-surface);
+  border: 2px solid #000;
+  font-size: var(--font-size-lg);
+  color: #000;
+  padding: var(--space-1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  transition: all 0.15s;
+  font-weight: 900;
+  box-shadow: 2px 2px 0 #000;
+}
+
+.modal-close:hover {
+  background: var(--color-danger);
+  transform: translate(1px, 1px);
+  box-shadow: none;
+}
+
+.modal-body {
+  padding: var(--space-6);
+}
+
+.modal-footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: 3px solid var(--color-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  background: var(--color-surface-alt);
+}
+
+/* ================================================================
+   UTILITY CLASSES
+   ================================================================ */
+.flex { display: flex; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.gap-2 { gap: var(--space-2); }
+.gap-4 { gap: var(--space-4); }
+.mt-4 { margin-top: var(--space-4); }
+.mt-6 { margin-top: var(--space-6); }
+.mt-8 { margin-top: var(--space-8); }
+.text-muted { color: var(--color-text-muted); }
+.text-sm { font-size: var(--font-size-sm); }
+.text-center { text-align: center; }
+.font-mono { font-family: 'SF Mono', 'Consolas', 'Liberation Mono', monospace; }
+
+/* ================================================================
+   CHECKBOX — neobrutalism style
+   ================================================================ */
+input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #000;
+  border-radius: 3px;
+  background: var(--color-surface);
+  cursor: pointer;
+  position: relative;
+  vertical-align: middle;
+}
+
+input[type="checkbox"]:checked {
+  background: var(--color-accent);
+}
+
+input[type="checkbox"]:checked::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  font-weight: 900;
+  color: #000;
+}
+
+/* ================================================================
+   SELECT dropdown neobrutalism style
+   ================================================================ */
+select.form-input {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23000' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+/* ================================================================
+   ANIMATIONS — neobrutalism micro-interactions
+   ================================================================ */
+@keyframes neo-bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+@keyframes neo-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-3px); }
+  75% { transform: translateX(3px); }
+}
+
+/* Subtle bounce for loading states */
+.btn:disabled {
+  animation: none;
+}
