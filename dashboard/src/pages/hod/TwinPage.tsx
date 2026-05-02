@@ -1,6 +1,7 @@
-import { useEffect, useState, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { dashboardApi } from '../../services/api';
+import { useEffect, useState, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+import { dashboardApi } from "../../services/api";
+import Model from "../../components/Model";
 
 interface SeatData {
   seat_id: string;
@@ -32,10 +33,13 @@ export default function TwinPage() {
 
   const fetchTwin = () => {
     if (id) {
-      dashboardApi.twin(id).then((res) => {
-        setTwin(res.data);
-        setLoading(false);
-      }).catch(() => setLoading(false));
+      dashboardApi
+        .twin(id)
+        .then((res) => {
+          setTwin(res.data);
+          setLoading(false);
+        })
+        .catch(() => setLoading(false));
     }
   };
 
@@ -48,21 +52,31 @@ export default function TwinPage() {
     };
   }, [id]);
 
-  if (loading) return <div className="page"><p className="text-muted">Loading digital twin...</p></div>;
-  if (!twin) return <div className="page"><p className="text-muted">Session not found</p></div>;
+  if (loading)
+    return (
+      <div className="page">
+        <p className="text-muted">Loading digital twin...</p>
+      </div>
+    );
+  if (!twin)
+    return (
+      <div className="page">
+        <p className="text-muted">Session not found</p>
+      </div>
+    );
 
   const getSeatClass = (seat: SeatData) => {
-    if (seat.attendance_status === 'present') return 'seat-present';
-    if (seat.attendance_status === 'rejected') return 'seat-rejected';
-    if (seat.attendance_status === 'revoked') return 'seat-revoked';
-    if (seat.is_occupied) return 'seat-occupied';
-    return 'seat-empty';
+    if (seat.attendance_status === "present") return "seat-present";
+    if (seat.attendance_status === "rejected") return "seat-rejected";
+    if (seat.attendance_status === "revoked") return "seat-revoked";
+    if (seat.is_occupied) return "seat-occupied";
+    return "seat-empty";
   };
 
   const getSeatStatusText = (seat: SeatData) => {
     if (seat.attendance_status) return seat.attendance_status;
-    if (seat.is_occupied) return 'occupied';
-    return '';
+    if (seat.is_occupied) return "occupied";
+    return "";
   };
 
   // Build grid
@@ -74,10 +88,16 @@ export default function TwinPage() {
     }
   }
 
-  const occupied = twin.seats.filter(s => s.is_occupied).length;
-  const present = twin.seats.filter(s => s.attendance_status === 'present').length;
-  const rejected = twin.seats.filter(s => s.attendance_status === 'rejected').length;
-  const revoked = twin.seats.filter(s => s.attendance_status === 'revoked').length;
+  const occupied = twin.seats.filter((s) => s.is_occupied).length;
+  const present = twin.seats.filter(
+    (s) => s.attendance_status === "present",
+  ).length;
+  const rejected = twin.seats.filter(
+    (s) => s.attendance_status === "rejected",
+  ).length;
+  const revoked = twin.seats.filter(
+    (s) => s.attendance_status === "revoked",
+  ).length;
 
   return (
     <div className="page">
@@ -85,10 +105,13 @@ export default function TwinPage() {
         <div>
           <h1 className="page-title">{twin.classroom_name}</h1>
           <p className="page-subtitle">
-            Digital Twin -- {twin.session_status === 'active' ? 'Live' : 'Closed'}
+            Digital Twin --{" "}
+            {twin.session_status === "active" ? "Live" : "Closed"}
           </p>
         </div>
-        <button className="btn btn-secondary" onClick={() => navigate(-1)}>Back</button>
+        <button className="btn btn-secondary" onClick={() => navigate(-1)}>
+          Back
+        </button>
       </div>
 
       <div className="stats-row">
@@ -119,11 +142,15 @@ export default function TwinPage() {
       <div className="card">
         <div className="card-header">
           <span className="card-title">Seat Map</span>
-          {twin.session_status === 'active' && (
+
+          {twin.session_status === "active" && (
             <span className="text-sm text-muted">Auto-refreshing every 3s</span>
           )}
         </div>
         <div className="card-body">
+          <div style={{ width: "100%", height: "400px", marginBottom: "20px" }}>
+            <Model url="../../assets/classroom.glb" twin={twin} />
+          </div>
           <div
             className="seat-grid"
             style={{ gridTemplateColumns: `repeat(${twin.layout_cols}, 56px)` }}
@@ -135,40 +162,60 @@ export default function TwinPage() {
                     key={seat.seat_id}
                     className={`seat-cell ${getSeatClass(seat)}`}
                     onClick={() => setSelected(seat)}
-                    style={{ cursor: 'pointer' }}
-                    title={`${seat.label} - ${getSeatStatusText(seat) || 'empty'}`}
+                    style={{ cursor: "pointer" }}
+                    title={`${seat.label} - ${getSeatStatusText(seat) || "empty"}`}
                   >
                     <span className="seat-label">{seat.label}</span>
                     {getSeatStatusText(seat) && (
-                      <span className="seat-status">{getSeatStatusText(seat)}</span>
+                      <span className="seat-status">
+                        {getSeatStatusText(seat)}
+                      </span>
                     )}
                   </div>
                 ) : (
-                  <div key={`empty-${ri}-${ci}`} style={{ width: 56, height: 56 }} />
-                )
-              )
+                  <div
+                    key={`empty-${ri}-${ci}`}
+                    style={{ width: 56, height: 56 }}
+                  />
+                ),
+              ),
             )}
           </div>
 
           <div className="seat-legend">
             <div className="seat-legend-item">
-              <div className="seat-legend-dot" style={{ background: 'var(--seat-empty)' }} />
+              <div
+                className="seat-legend-dot"
+                style={{ background: "var(--seat-empty)" }}
+              />
               <span>Empty</span>
             </div>
             <div className="seat-legend-item">
-              <div className="seat-legend-dot" style={{ background: 'var(--seat-occupied)' }} />
+              <div
+                className="seat-legend-dot"
+                style={{ background: "var(--seat-occupied)" }}
+              />
               <span>Occupied</span>
             </div>
             <div className="seat-legend-item">
-              <div className="seat-legend-dot" style={{ background: 'var(--seat-present)' }} />
+              <div
+                className="seat-legend-dot"
+                style={{ background: "var(--seat-present)" }}
+              />
               <span>Present</span>
             </div>
             <div className="seat-legend-item">
-              <div className="seat-legend-dot" style={{ background: 'var(--seat-rejected)' }} />
+              <div
+                className="seat-legend-dot"
+                style={{ background: "var(--seat-rejected)" }}
+              />
               <span>Rejected</span>
             </div>
             <div className="seat-legend-item">
-              <div className="seat-legend-dot" style={{ background: 'var(--seat-revoked)' }} />
+              <div
+                className="seat-legend-dot"
+                style={{ background: "var(--seat-revoked)" }}
+              />
               <span>Revoked</span>
             </div>
           </div>
@@ -181,32 +228,45 @@ export default function TwinPage() {
           <div className="modal" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <span className="modal-title">Seat {selected.label}</span>
-              <button className="modal-close" onClick={() => setSelected(null)}>x</button>
+              <button className="modal-close" onClick={() => setSelected(null)}>
+                x
+              </button>
             </div>
             <div className="modal-body">
-              <div style={{ display: 'grid', gap: 'var(--space-3)' }}>
+              <div style={{ display: "grid", gap: "var(--space-3)" }}>
                 <div className="flex-between">
                   <span className="text-muted text-sm">Occupied</span>
-                  <span>{selected.is_occupied ? 'Yes' : 'No'}</span>
+                  <span>{selected.is_occupied ? "Yes" : "No"}</span>
                 </div>
                 <div className="flex-between">
                   <span className="text-muted text-sm">Attendance</span>
                   <span>
-                    {selected.attendance_status
-                      ? <span className={`badge badge-${selected.attendance_status}`}>{selected.attendance_status}</span>
-                      : '--'
-                    }
+                    {selected.attendance_status ? (
+                      <span
+                        className={`badge badge-${selected.attendance_status}`}
+                      >
+                        {selected.attendance_status}
+                      </span>
+                    ) : (
+                      "--"
+                    )}
                   </span>
                 </div>
                 {selected.last_seen_at && (
                   <div className="flex-between">
                     <span className="text-muted text-sm">Last Seen</span>
-                    <span>{new Date(selected.last_seen_at).toLocaleTimeString('en-GB')}</span>
+                    <span>
+                      {new Date(selected.last_seen_at).toLocaleTimeString(
+                        "en-GB",
+                      )}
+                    </span>
                   </div>
                 )}
                 <div className="flex-between">
                   <span className="text-muted text-sm">Seat ID</span>
-                  <span className="font-mono text-sm">{selected.seat_id.slice(0, 12)}...</span>
+                  <span className="font-mono text-sm">
+                    {selected.seat_id.slice(0, 12)}...
+                  </span>
                 </div>
               </div>
             </div>
