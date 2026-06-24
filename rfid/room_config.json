@@ -1,0 +1,12 @@
+{
+  "room_width_cm": 800,
+  "room_depth_cm": 600,
+  "motor1_cm_per_revolution": 8.0,
+  "motor2_cm_per_revolution": 8.0,
+  "steps_per_revolution": 1600,
+  "steps_per_press": 400,
+  "origin_offset_x_cm": 0.0,
+  "origin_offset_y_cm": 0.0,
+  "_comment": "motor1_revolutions_per_360=2 means 2 motor shaft revolutions = 1 full platform rotation. Total steps for 360 = 3200.",
+  "motor1_revolutions_per_360": 2
+}

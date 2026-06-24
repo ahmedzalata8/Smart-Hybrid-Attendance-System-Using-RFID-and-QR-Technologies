@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RFID 360° Digital Twin — Radar View</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: #000;
+            color: #00ff88;
+            font-family: 'Share Tech Mono', monospace;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.6rem;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: #00ff88;
+            text-shadow: 0 0 20px #00ff8866, 0 0 40px #00ff8833;
+            margin-top: 24px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 0.75rem;
+            color: #00cc6688;
+            letter-spacing: 2px;
+            margin-top: 4px;
+            text-align: center;
+        }
+
+        .radar-container {
+            position: relative;
+            margin-top: 20px;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        /* Quadrant stats panel */
+        .stats-panel {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            max-width: 640px;
+            width: 100%;
+            padding: 0 20px;
+            margin: 24px auto;
+        }
+
+        .quadrant-card {
+            background: rgba(0, 255, 136, 0.04);
+            border: 1px solid rgba(0, 255, 136, 0.15);
+            border-radius: 8px;
+            padding: 14px 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .quadrant-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #00ff88, transparent);
+            opacity: 0.5;
+        }
+
+        .quadrant-card h3 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.75rem;
+            color: #00ff88;
+            letter-spacing: 2px;
+            margin-bottom: 8px;
+            text-shadow: 0 0 8px #00ff8844;
+        }
+
+        .quadrant-card .angle-range {
+            font-size: 0.65rem;
+            color: #00cc6666;
+            margin-bottom: 6px;
+        }
+
+        .tag-list {
+            list-style: none;
+            font-size: 0.75rem;
+            line-height: 1.6;
+        }
+
+        .tag-list li {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .tag-dot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .tag-dot.detected {
+            background: #ff3333;
+            box-shadow: 0 0 8px #ff3333aa, 0 0 16px #ff333355;
+        }
+
+        .tag-dot.missing {
+            background: #333;
+            border: 1px solid #555;
+        }
+
+        .tag-label-detected { color: #ff6666; }
+        .tag-label-missing { color: #444; text-decoration: line-through; }
+
+        .accuracy-bar-container {
+            margin-top: 8px;
+            height: 4px;
+            background: #111;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .accuracy-bar {
+            height: 100%;
+            border-radius: 2px;
+            transition: width 1s ease;
+        }
+
+        .accuracy-text {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.7rem;
+            margin-top: 4px;
+            text-align: right;
+        }
+
+        /* Overall stats footer */
+        .footer-stats {
+            display: flex;
+            gap: 32px;
+            justify-content: center;
+            margin: 8px 0 32px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.4rem;
+            color: #00ff88;
+            text-shadow: 0 0 12px #00ff8855;
+        }
+
+        .stat-label {
+            font-size: 0.65rem;
+            color: #00cc6666;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .load-hint {
+            color: #00cc6644;
+            font-size: 0.7rem;
+            text-align: center;
+            margin: 12px 0;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .load-btn {
+            background: transparent;
+            border: 1px solid #00ff8844;
+            color: #00ff88;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            padding: 6px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s;
+            margin: 8px 4px;
+        }
+
+        .load-btn:hover {
+            background: #00ff8815;
+            border-color: #00ff88;
+            box-shadow: 0 0 12px #00ff8833;
+        }
+    </style>
+</head>
+<body>
+    <h1>RFID 360° Digital Twin</h1>
+    <div class="subtitle">RADAR QUADRANT ANALYSIS</div>
+
+    <div class="radar-container">
+        <canvas id="radarCanvas" width="600" height="600"></canvas>
+    </div>
+
+    <div class="footer-stats" id="footerStats"></div>
+
+    <div class="stats-panel" id="statsPanel"></div>
+
+    <div class="load-hint">
+        <button class="load-btn" onclick="loadFromFile()">↻ RELOAD DATA</button>
+        <button class="load-btn" onclick="document.getElementById('fileInput').click()">⇧ LOAD JSON</button>
+        <input type="file" id="fileInput" accept=".json" onchange="handleFileUpload(event)">
+    </div>
+
+    <!-- Data injected by scan_360.py -->
+    <script src="scan_data.js"></script>
+
+    <script>
+    // =========================================================================
+    // DATA
+    // =========================================================================
+
+    let scanData = null;
+    let tagMapData = null;
+    let sweepAngle = 0;
+    let animationStarted = false;
+
+    const QUADRANTS = [
+        { name: 'Q1 — FRONT',  startDeg: 0,   endDeg: 90,  color: '#00ff88' },
+        { name: 'Q2 — RIGHT',  startDeg: 90,  endDeg: 180, color: '#00ccff' },
+        { name: 'Q3 — BACK',   startDeg: 180, endDeg: 270, color: '#ff8800' },
+        { name: 'Q4 — LEFT',   startDeg: 270, endDeg: 360, color: '#ff3366' },
+    ];
+
+    // =========================================================================
+    // LOAD DATA
+    // =========================================================================
+
+    async function loadData() {
+        // Try globals from scan_data.js first (works with file:// protocol)
+        if (typeof SCAN_DATA !== 'undefined' && typeof TAG_MAP_DATA !== 'undefined') {
+            scanData = SCAN_DATA;
+            tagMapData = TAG_MAP_DATA;
+            processAndRender();
+            return;
+        }
+
+        // Fallback: fetch JSON files (works with http:// server)
+        try {
+            const [scanRes, tagRes] = await Promise.all([
+                fetch('scan_360_results.json'),
+                fetch('tag_map.json'),
+            ]);
+            scanData = await scanRes.json();
+            tagMapData = await tagRes.json();
+            processAndRender();
+        } catch (e) {
+            console.warn('Could not load data. Run scan_360.py first.', e);
+        }
+    }
+
+    function loadFromFile() {
+        // Re-read scan_data.js by adding a new script tag with cache-busting
+        const script = document.createElement('script');
+        script.src = 'scan_data.js?t=' + Date.now();
+        script.onload = () => {
+            scanData = SCAN_DATA;
+            tagMapData = TAG_MAP_DATA;
+            processAndRender();
+        };
+        document.head.appendChild(script);
+    }
+
+    function handleFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                scanData = JSON.parse(e.target.result);
+                processAndRender();
+            } catch (err) {
+                alert('Invalid JSON file');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    // =========================================================================
+    // PROCESS
+    // =========================================================================
+
+    let processedTags = [];  // { label, angle, detected, quadrant }
+    let quadrantStats = [];
+
+    function processAndRender() {
+        const allTagLabels = tagMapData ? Object.keys(tagMapData) : [];
+        const detectedSummary = scanData?.tags_summary || {};
+
+        // Quadrant name -> center angle for positioning
+        const QUAD_CENTER = { Q1: 45, Q2: 135, Q3: 225, Q4: 315 };
+        const QUAD_RANGE = { Q1: [0, 90], Q2: [90, 180], Q3: [180, 270], Q4: [270, 360] };
+
+        // Build tag list — detected tags use best_quadrant from scan data
+        processedTags = [];
+
+        // Collect detected tags per quadrant to spread them within their quadrant
+        const quadDetected = { Q1: [], Q2: [], Q3: [], Q4: [] };
+
+        allTagLabels.forEach((label) => {
+            const info = detectedSummary[label];
+            if (info && info.detection_count > 0) {
+                const bestQ = info.best_quadrant || 'Q1';
+                quadDetected[bestQ].push({
+                    label,
+                    detected: true,
+                    hits: info.detection_count,
+                    angles: info.angles_detected || [],
+                    quadrant_hits: info.quadrant_hits || {},
+                    best_quadrant: bestQ,
+                });
+            } else {
+                processedTags.push({
+                    label,
+                    angle: null,
+                    detected: false,
+                    hits: 0,
+                    angles: [],
+                    best_quadrant: null,
+                });
+            }
+        });
+
+        // Position detected tags spread within their best quadrant
+        Object.keys(quadDetected).forEach(qName => {
+            const tags = quadDetected[qName];
+            const [qStart, qEnd] = QUAD_RANGE[qName];
+            tags.forEach((tag, idx) => {
+                const spread = (qEnd - qStart) / (tags.length + 1);
+                tag.angle = qStart + spread * (idx + 1);
+                processedTags.push(tag);
+            });
+        });
+
+        // Assign undetected tags evenly around circle for display
+        const undetected = processedTags.filter(t => !t.detected);
+        undetected.forEach((tag) => {
+            const num = parseInt(tag.label.replace('Tag-', ''));
+            tag.angle = ((num - 1) / allTagLabels.length) * 360;
+        });
+
+        // Compute quadrant stats — detected tags go to their best_quadrant
+        quadrantStats = QUADRANTS.map((q) => {
+            const qName = q.name.split(' ')[0];  // "Q1", "Q2", etc.
+            const detected = processedTags.filter(t =>
+                t.detected && t.best_quadrant === qName
+            );
+            const undetectedInQ = processedTags.filter(t =>
+                !t.detected && t.angle !== null && t.angle >= q.startDeg && t.angle < q.endDeg
+            );
+            const allInQ = [...detected, ...undetectedInQ];
+            return {
+                ...q,
+                tags: allInQ,
+                detected,
+                missing: undetectedInQ,
+                total: allInQ.length,
+                accuracy: allInQ.length > 0 ? (detected.length / allInQ.length) * 100 : 0,
+            };
+        });
+
+        renderStats();
+        renderFooter();
+
+        if (!animationStarted) {
+            animationStarted = true;
+            animate();
+        }
+    }
+
+    // =========================================================================
+    // RENDER STATS
+    // =========================================================================
+
+    function renderStats() {
+        const panel = document.getElementById('statsPanel');
+        panel.innerHTML = quadrantStats.map((q) => {
+            const tagItems = q.tags.map(t => {
+                const cls = t.detected ? 'detected' : 'missing';
+                const lblCls = t.detected ? 'tag-label-detected' : 'tag-label-missing';
+                const hitsStr = t.detected ? ` (${t.hits} hits)` : '';
+                return `<li><span class="tag-dot ${cls}"></span><span class="${lblCls}">${t.label}${hitsStr}</span></li>`;
+            }).join('');
+
+            const barColor = q.accuracy >= 75 ? '#00ff88' : q.accuracy >= 50 ? '#ffaa00' : '#ff3333';
+            const accColor = q.accuracy >= 75 ? '#00ff88' : q.accuracy >= 50 ? '#ffaa00' : '#ff3333';
+
+            return `
+                <div class="quadrant-card">
+                    <h3>${q.name}</h3>
+                    <div class="angle-range">${q.startDeg}° — ${q.endDeg}°</div>
+                    <ul class="tag-list">${tagItems || '<li style="color:#333">No tags in quadrant</li>'}</ul>
+                    <div class="accuracy-bar-container">
+                        <div class="accuracy-bar" style="width:${q.accuracy}%; background:${barColor};"></div>
+                    </div>
+                    <div class="accuracy-text" style="color:${accColor}">
+                        ${q.detected.length}/${q.total} detected — ${q.accuracy.toFixed(0)}%
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    function renderFooter() {
+        const info = scanData?.scan_info || {};
+        const totalTags = processedTags.length;
+        const detectedCount = processedTags.filter(t => t.detected).length;
+        const overallAcc = totalTags > 0 ? ((detectedCount / totalTags) * 100).toFixed(0) : '0';
+
+        document.getElementById('footerStats').innerHTML = `
+            <div class="stat-item">
+                <div class="stat-value">${detectedCount}/${totalTags}</div>
+                <div class="stat-label">TAGS DETECTED</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${overallAcc}%</div>
+                <div class="stat-label">ACCURACY</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${(info.duration_seconds || 0).toFixed(1)}s</div>
+                <div class="stat-label">SCAN TIME</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">${info.raw_detection_count || 0}</div>
+                <div class="stat-label">RAW READS</div>
+            </div>
+        `;
+    }
+
+    // =========================================================================
+    // RADAR CANVAS
+    // =========================================================================
+
+    const canvas = document.getElementById('radarCanvas');
+    const ctx = canvas.getContext('2d');
+    const SIZE = 600;
+    const CX = SIZE / 2;
+    const CY = SIZE / 2;
+    const RADAR_R = 240;
+
+    function drawRadarBackground() {
+        // Outer glow ring
+        const glowGrad = ctx.createRadialGradient(CX, CY, RADAR_R - 10, CX, CY, RADAR_R + 20);
+        glowGrad.addColorStop(0, 'rgba(0, 255, 136, 0.12)');
+        glowGrad.addColorStop(0.5, 'rgba(0, 255, 136, 0.06)');
+        glowGrad.addColorStop(1, 'rgba(0, 255, 136, 0)');
+        ctx.fillStyle = glowGrad;
+        ctx.beginPath();
+        ctx.arc(CX, CY, RADAR_R + 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Concentric rings
+        for (let i = 1; i <= 5; i++) {
+            const r = (RADAR_R / 5) * i;
+            ctx.strokeStyle = `rgba(0, 255, 136, ${i === 5 ? 0.35 : 0.08})`;
+            ctx.lineWidth = i === 5 ? 2 : 1;
+            ctx.beginPath();
+            ctx.arc(CX, CY, r, 0, Math.PI * 2);
+            ctx.stroke();
+        }
+
+        // Outer thick ring with glow
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.6)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 15;
+        ctx.beginPath();
+        ctx.arc(CX, CY, RADAR_R, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+
+        // Cross lines (quadrant dividers)
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.12)';
+        ctx.lineWidth = 1;
+        // Vertical
+        ctx.beginPath();
+        ctx.moveTo(CX, CY - RADAR_R);
+        ctx.lineTo(CX, CY + RADAR_R);
+        ctx.stroke();
+        // Horizontal
+        ctx.beginPath();
+        ctx.moveTo(CX - RADAR_R, CY);
+        ctx.lineTo(CX + RADAR_R, CY);
+        ctx.stroke();
+
+        // Diagonal lines (every 45°)
+        for (let deg = 45; deg < 360; deg += 90) {
+            const rad = (deg - 90) * Math.PI / 180;
+            ctx.beginPath();
+            ctx.moveTo(CX, CY);
+            ctx.lineTo(CX + Math.cos(rad) * RADAR_R, CY + Math.sin(rad) * RADAR_R);
+            ctx.stroke();
+        }
+
+        // Tick marks around outer ring
+        ctx.strokeStyle = 'rgba(0, 255, 136, 0.25)';
+        for (let deg = 0; deg < 360; deg += 10) {
+            const rad = (deg - 90) * Math.PI / 180;
+            const r1 = deg % 30 === 0 ? RADAR_R - 12 : RADAR_R - 6;
+            ctx.beginPath();
+            ctx.moveTo(CX + Math.cos(rad) * r1, CY + Math.sin(rad) * r1);
+            ctx.lineTo(CX + Math.cos(rad) * RADAR_R, CY + Math.sin(rad) * RADAR_R);
+            ctx.stroke();
+        }
+
+        // Quadrant labels
+        ctx.font = '11px "Orbitron", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+
+        const lblR = RADAR_R + 32;
+        const labels = [
+            { text: '0°', deg: 0 },
+            { text: '90°', deg: 90 },
+            { text: '180°', deg: 180 },
+            { text: '270°', deg: 270 },
+        ];
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.4)';
+        labels.forEach(l => {
+            const rad = (l.deg - 90) * Math.PI / 180;
+            ctx.fillText(l.text, CX + Math.cos(rad) * lblR, CY + Math.sin(rad) * lblR);
+        });
+
+        // Quadrant name labels
+        ctx.font = '10px "Orbitron", sans-serif';
+        const qLblR = RADAR_R * 0.55;
+        const qLabels = [
+            { text: 'Q1', deg: 45 },
+            { text: 'Q2', deg: 135 },
+            { text: 'Q3', deg: 225 },
+            { text: 'Q4', deg: 315 },
+        ];
+        ctx.fillStyle = 'rgba(0, 255, 136, 0.15)';
+        qLabels.forEach(l => {
+            const rad = (l.deg - 90) * Math.PI / 180;
+            ctx.fillText(l.text, CX + Math.cos(rad) * qLblR, CY + Math.sin(rad) * qLblR);
+        });
+    }
+
+    function drawSweepLine(angle) {
+        const rad = (angle - 90) * Math.PI / 180;
+
+        // Sweep fade trail (cone)
+        const trailDeg = 30;
+        const startRad = (angle - 90 - trailDeg) * Math.PI / 180;
+        const endRad = rad;
+
+        const gradient = ctx.createConicGradient(startRad, CX, CY);
+        const frac = trailDeg / 360;
+        gradient.addColorStop(0, 'rgba(0, 255, 136, 0)');
+        gradient.addColorStop(frac * 0.5, 'rgba(0, 255, 136, 0.03)');
+        gradient.addColorStop(frac, 'rgba(0, 255, 136, 0.12)');
+        gradient.addColorStop(frac + 0.001, 'rgba(0, 255, 136, 0)');
+
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.arc(CX, CY, RADAR_R - 2, startRad, endRad);
+        ctx.closePath();
+        ctx.fill();
+
+        // Main sweep line
+        ctx.strokeStyle = '#00ff88';
+        ctx.lineWidth = 2;
+        ctx.shadowColor = '#00ff88';
+        ctx.shadowBlur = 20;
+        ctx.beginPath();
+        ctx.moveTo(CX, CY);
+        ctx.lineTo(CX + Math.cos(rad) * RADAR_R, CY + Math.sin(rad) * RADAR_R);
+        ctx.stroke();
+        ctx.shadowBlur = 0;
+    }
+
+    function drawTags(time) {
+        const tagRadius = RADAR_R * 0.78;
+
+        processedTags.forEach((tag) => {
+            if (tag.angle === null) return;
+
+            const rad = (tag.angle - 90) * Math.PI / 180;
+            const tx = CX + Math.cos(rad) * tagRadius;
+            const ty = CY + Math.sin(rad) * tagRadius;
+
+            if (tag.detected) {
+                // Pulsing red dot
+                const pulse = 1 + 0.2 * Math.sin(time * 0.003 + tag.angle);
+                const dotR = 8 * pulse;
+
+                // Outer glow
+                const glow = ctx.createRadialGradient(tx, ty, 0, tx, ty, dotR * 3);
+                glow.addColorStop(0, 'rgba(255, 50, 50, 0.5)');
+                glow.addColorStop(0.5, 'rgba(255, 50, 50, 0.15)');
+                glow.addColorStop(1, 'rgba(255, 50, 50, 0)');
+                ctx.fillStyle = glow;
+                ctx.beginPath();
+                ctx.arc(tx, ty, dotR * 3, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Core dot
+                ctx.fillStyle = '#ff3333';
+                ctx.shadowColor = '#ff3333';
+                ctx.shadowBlur = 12;
+                ctx.beginPath();
+                ctx.arc(tx, ty, dotR, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+
+                // Bright center
+                ctx.fillStyle = '#ff8888';
+                ctx.beginPath();
+                ctx.arc(tx, ty, dotR * 0.4, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Label
+                ctx.font = '9px "Share Tech Mono", monospace';
+                ctx.fillStyle = '#ff6666';
+                ctx.textAlign = 'center';
+                ctx.fillText(tag.label, tx, ty - dotR - 6);
+            } else {
+                // Dim empty slot
+                ctx.strokeStyle = 'rgba(80, 80, 80, 0.4)';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.arc(tx, ty, 5, 0, Math.PI * 2);
+                ctx.stroke();
+
+                // Tiny dot
+                ctx.fillStyle = 'rgba(60, 60, 60, 0.5)';
+                ctx.beginPath();
+                ctx.arc(tx, ty, 2, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        });
+    }
+
+    function drawCenter(time) {
+        // Pulsing center dot
+        const pulse = 1 + 0.15 * Math.sin(time * 0.004);
+
+        const cg = ctx.createRadialGradient(CX, CY, 0, CX, CY, 12 * pulse);
+        cg.addColorStop(0, 'rgba(0, 255, 136, 0.8)');
+        cg.addColorStop(0.5, 'rgba(0, 255, 136, 0.2)');
+        cg.addColorStop(1, 'rgba(0, 255, 136, 0)');
+        ctx.fillStyle = cg;
+        ctx.beginPath();
+        ctx.arc(CX, CY, 12 * pulse, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#00ff88';
+        ctx.beginPath();
+        ctx.arc(CX, CY, 3, 0, Math.PI * 2);
+        ctx.fill();
+    }
+
+    function drawQuadrantArcs() {
+        // Draw accuracy arcs for each quadrant
+        quadrantStats.forEach((q, idx) => {
+            const startRad = (q.startDeg - 90) * Math.PI / 180;
+            const endRad = (q.endDeg - 90) * Math.PI / 180;
+            const arcR = RADAR_R + 8;
+
+            // Background arc
+            ctx.strokeStyle = 'rgba(50, 50, 50, 0.3)';
+            ctx.lineWidth = 4;
+            ctx.beginPath();
+            ctx.arc(CX, CY, arcR, startRad, endRad);
+            ctx.stroke();
+
+            // Filled accuracy arc
+            if (q.accuracy > 0) {
+                const accEnd = (q.startDeg + (q.endDeg - q.startDeg) * q.accuracy / 100 - 90) * Math.PI / 180;
+                const accColor = q.accuracy >= 75 ? '#00ff88' : q.accuracy >= 50 ? '#ffaa00' : '#ff3333';
+                ctx.strokeStyle = accColor;
+                ctx.lineWidth = 4;
+                ctx.shadowColor = accColor;
+                ctx.shadowBlur = 8;
+                ctx.beginPath();
+                ctx.arc(CX, CY, arcR, startRad, accEnd);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+            }
+        });
+    }
+
+    // =========================================================================
+    // ANIMATION LOOP
+    // =========================================================================
+
+    function animate(time = 0) {
+        ctx.clearRect(0, 0, SIZE, SIZE);
+
+        drawRadarBackground();
+        drawQuadrantArcs();
+
+        // Sweep rotation
+        sweepAngle = (sweepAngle + 0.8) % 360;
+        drawSweepLine(sweepAngle);
+
+        drawTags(time);
+        drawCenter(time);
+
+        requestAnimationFrame(animate);
+    }
+
+    // =========================================================================
+    // INIT
+    // =========================================================================
+
+    loadData();
+    </script>
+</body>
+</html>

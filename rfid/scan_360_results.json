@@ -1,0 +1,19 @@
+{
+  "scan_info": {
+    "scan_start": "2026-06-23T16:17:55.121031+03:00",
+    "scan_end": "2026-06-23T16:17:59.132005+03:00",
+    "duration_seconds": 4.0,
+    "scan_mode": "single_pass",
+    "num_positions": 16,
+    "degrees_per_position": 22.5,
+    "steps_per_position": 127,
+    "steps_per_revolution": 1600,
+    "stepper_port": "COM3",
+    "rfid_port": "COM4",
+    "similarity_threshold": 0.92,
+    "raw_detection_count": 0
+  },
+  "tags_found": 0,
+  "tags_summary": {},
+  "clustered_detections": []
+}

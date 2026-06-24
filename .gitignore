@@ -1,0 +1,43 @@
+# ───────────────────────────────────────────────────────────────
+# Smart Hybrid Attendance System — root .gitignore
+#
+# NOTE: This project INTENTIONALLY commits the database snapshots
+# (database/*.sql, rfid/rfid_scans.db) and the dev server/.env so the
+# project can be moved to another machine with no extra setup.
+# These contain only local/dev credentials. If this repo ever becomes
+# public, rotate SECRET_KEY / DB password and add server/.env here.
+# ───────────────────────────────────────────────────────────────
+
+# Python virtual environments
+venv/
+.venv/
+env/
+ENV/
+
+# Python caches / build
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+*.tsbuildinfo
+
+# Logs
+*.log
+
+# OS / editor cruft
+.DS_Store
+Thumbs.db
+.idea/
+
+# Large archives & disposable bundles (recreate from requirements.txt)
+*.zip
+*.rar
+
+# Runtime state (regenerated automatically)
+rfid/stepper_position.json

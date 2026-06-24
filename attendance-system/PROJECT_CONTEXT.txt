@@ -1,0 +1,91 @@
+====================================================================
+UNIVERSITY ATTENDANCE SYSTEM - FULL PROJECT CONTEXT & DOCUMENTATION
+====================================================================
+
+1. PROJECT OVERVIEW
+-------------------
+We are building a robust, enterprise-grade University Attendance System with Dual-Factor Verification. The system moves away from traditional paper-based or simple GPS-based roll calls and implements a highly auditable, continuous presence monitoring system.
+
+Core Concept: "Dual-Factor Verification"
+- Factor 1: Logical Claim (The student scanning an expiring, cryptographically signed QR code using their mobile app).
+- Factor 2: Physical Occupancy (IoT RFID readers embedded in the seats verifying the student's physical presence in real-time).
+
+2. TECHNOLOGY STACK
+-------------------
+* Backend: Python 3.12, FastAPI, SQLAlchemy 2.0 (Async), APScheduler
+* Database: PostgreSQL 17 (accessed via asyncpg), Alembic for migrations
+* Frontend Web: React 18, Vite, TypeScript, React Router, Axios
+* Frontend Mobile (Pending): Flutter
+* Hardware Integration (Pending): Python script mimicking RFID Scanners
+* Deployment (Pending): Docker & Docker Compose
+
+3. DATABASE ARCHITECTURE (12 Tables)
+------------------------------------
+1.  roles: Defines system roles (student, lecturer, hod, admin).
+2.  departments: Academic departments.
+3.  users: Faculty and students linked to departments and roles.
+4.  courses: Academic courses taught by lecturers.
+5.  enrollments: Mapping of students to courses.
+6.  classrooms: Physical rooms with defined layouts (e.g., 5x5 grid).
+7.  seats: Individual seats mapped to spatial coordinates (row/col) and physical hardware IDs (RFID tags).
+8.  attendance_sessions: A specific class session with an start time, expiry, required presence percentage, and cryptographic QR token.
+9.  seat_states: The real-time occupancy status of every seat for an active session.
+10. seat_state_history: An append-only ledger tracking exact times a seat transitions between occupied and empty.
+11. attendance_claims: The raw, unverified submission from a student claiming they are in a specific seat.
+12. attendance_records: The verified, finalized result (present, rejected, or revoked).
+13. audit_logs: Cryptographically chained (SHA-256) ledger ensuring past records cannot be tampered with.
+
+4. CORE WORKFLOWS & BUSINESS LOGIC
+----------------------------------
+A. Session Creation (Lecturer)
+   - Lecturer logs into the Web Dashboard, selects a Course and Classroom (e.g., Room 101, 5x5 seats), configures duration, freshness window, and minimum presence threshold (e.g., 75%).
+   - Backend creates an AttendanceSession, generates a secure HMAC-SHA256 QR token, and registers 25 empty SeatStates.
+
+B. The Live Verification Loop
+   - Lecturer displays the QR code on the projector.
+   - IoT readers continuously scan the classroom seats for RFID tags and POST occupancy chunks to the backend.
+   - Student scans the QR code from their app, selects what seat they are in (e.g., "A3"), and submits a claim.
+   - The backend checks if seat A3 is actually physically occupied right now. 
+   - If YES -> Status: "present". If NO -> Status: "rejected" (Dual-Factor Mismatch).
+
+C. Continuous Presence Monitoring
+   - The IoT reader occasionally reports seat A3 is suddenly empty. The backend logs this exact timestamp in seat_state_history. When the student returns, a new log is created.
+
+D. Session Finalization & Audit
+   - An APScheduler background task runs every 30 seconds to find expired sessions, or the Lecturer clicks "Close Session" manually.
+   - Finalization Service calculates total time occupied for each "present" student. If occupied time < minimum presence threshold (e.g., 75%), their attendance is REVOKED.
+   - The final state is hashed, chained to the previous session's hash, and written to the audit_logs table.
+
+E. The Digital Twin (HoD/Lecturer)
+   - The Web Dashboard features a real-time Digital Twin seat map. It polls the backend every 3 seconds to render a visual representation of the classroom, color-coding seats based on physical occupancy and logical attendance status (Empty, Occupied, Present, Rejected, Revoked).
+
+5. CURRENT PROJECT STATUS (March 2026)
+--------------------------------------
+[COMPLETED] Phase 1: Requirements & DB Schema Definition.
+[COMPLETED] Phase 2: Core FastAPI and PostgreSQL Scaffolding.
+[COMPLETED] Phase 3: Core API Services (Auth, Sessions, QR, RFID Scanning).
+[COMPLETED] Phase 4: Finalization Service & Cryptographic Audit Trails.
+[COMPLETED] Phase 5: Testing (Full E2E Seed Test validating API flows).
+[COMPLETED] Phase 6: Web Dashboard (React/Vite Lecturer and HoD interfaces).
+
+[PENDING] Phase 7: Mobile App (Flutter for scanning QR codes and claiming seats).
+[PENDING] Phase 8: IoT Reader Script (Python script to feed RFID data).
+[PENDING] Phase 9: Deployment Configuration (Docker Compose).
+
+6. HOW TO RUN THE SYSTEM MANUALLY
+---------------------------------
+Ensure PostgreSQL service is running natively (User: postgres, Pass: attend).
+
+A) Backend API (Port 8000)
+    cd C:\Users\pc\Desktop\attendance-system\server
+    .\venv\Scripts\activate
+    uvicorn app.main:app --reload --port 8000
+
+B) Frontend Web Dashboard (Port 5173)
+    cd C:\Users\pc\Desktop\attendance-system\dashboard
+    npm run dev
+
+Test Credentials:
+- Lecturer: dr.smith@university.edu / lecture123
+- HoD: hod@university.edu / hod123
+- Student: alice@university.edu / student123
